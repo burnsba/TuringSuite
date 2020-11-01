@@ -3,22 +3,24 @@ using System.Collections.Generic;
 
 namespace TuringSuite.Core
 {
-    public interface ITuringMachine
+    public interface ITuringMachine<TState, TSymbol>
     {
-        List<int> States { get; set; }
+        List<TState> States { get; set; }
 
-        List<int> AlphabetSymbols { get; set; }
+        List<TSymbol> AlphabetSymbols { get; set; }
 
-        int BlankSymbol { get; set; }
+        TSymbol BlankSymbol { get; }
 
-        int InitialState { get; set; }
+        TState InitialState { get; }
 
-        List<int> HaltingStates { get; set; }
+        List<TState> HaltingStates { get; set; }
 
-        int HeadPosition { get; }
+        int HeadPositionX { get; }
 
-        int CurrentState { get; }
+        TState CurrentState { get; }
 
-        void TransitionFunction();
+        List<IStateTransitionDescription<TState, TSymbol>> Transitions { get; set; }
+
+        bool Step();
     }
 }
