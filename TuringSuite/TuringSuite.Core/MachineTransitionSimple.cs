@@ -12,6 +12,10 @@ namespace TuringSuite.Core
 
         public byte WriteSymbol { get; set; }
 
+        /// <summary>
+        /// Gets or sets the next state. If the next state is to halt,
+        /// this value should be negative.
+        /// </summary>
         public int NextState { get; set; }
 
         public bool NextStateHalts { get; set; }
