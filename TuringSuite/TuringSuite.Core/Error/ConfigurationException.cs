@@ -5,8 +5,13 @@ using System.Text;
 
 namespace TuringSuite.Core.Error
 {
+    /// <summary>
+    /// Exception thrown during initial setup.
+    /// </summary>
     public class ConfigurationException : Exception
     {
+        public int ErrorCode { get; set; }
+
         public ConfigurationException()
         {
         }

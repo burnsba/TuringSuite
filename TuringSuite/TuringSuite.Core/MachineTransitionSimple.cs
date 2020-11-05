@@ -4,6 +4,9 @@ using System.Text;
 
 namespace TuringSuite.Core
 {
+    /// <summary>
+    /// Simple implementation of transition definition.
+    /// </summary>
     public class MachineTransitionSimple : IStateTransitionDescription<int, byte>
     {
         public byte FromSymbol { get; set; }
@@ -12,10 +15,6 @@ namespace TuringSuite.Core
 
         public byte WriteSymbol { get; set; }
 
-        /// <summary>
-        /// Gets or sets the next state. If the next state is to halt,
-        /// this value should be negative.
-        /// </summary>
         public int NextState { get; set; }
 
         public bool NextStateHalts { get; set; }

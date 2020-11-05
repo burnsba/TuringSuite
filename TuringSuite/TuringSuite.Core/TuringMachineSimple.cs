@@ -9,16 +9,22 @@ namespace TuringSuite.Core
 {
     public class TuringMachineSimple : ITuringMachine<int, byte>
     {
+        // There is the head position (theoretical Turing machine head position), which is being tracked, but
+        // implemented in code on a limited machine. The tape is being modeled as an array, and the
+        // head position starts out in the middle of the array. Therefore, the theoretical head position
+        // needs to be tracked, as well as the actual array offset.
         private int _headPositionX = 0;
-        private int _currentState = -1;
-        private uint _tapeSize = 0;
         private int _positionOffset = 0;
+        private byte[] _tape;
 
-        private int _minHeadIndex = int.MaxValue;
-        private int _maxHeadIndex = -1;
+        // Track the farthest left on the tape the machine head has visited.
+        private int _minHeadIndex = 0;
+
+        // Track the farthest right on the tape the machine head has visited.
+        private int _maxHeadIndex = 0;
+
+        // Track whether execution has reached a halting state.
         private bool _reachedHalt = false;
-
-        private ulong _stepCount = 0;
 
         private Dictionary<int, string> _friendlyStateMap = new Dictionary<int, string>();
         private Dictionary<string, int> _unfriendlyStateMap = new Dictionary<string, int>();
@@ -32,16 +38,19 @@ namespace TuringSuite.Core
         /// </summary>
         private Dictionary<int, Dictionary<byte, IStateTransitionDescription<int, byte>>> _transitionLookup = new Dictionary<int, Dictionary<byte, IStateTransitionDescription<int, byte>>>();
 
-        private byte[] _tape;
-
+        /// <inheritdoc />
         public List<int> NonHaltingStates { get; set; } = new List<int>();
 
+        /// <inheritdoc />
         public List<byte> AlphabetSymbols { get; set; } = new List<byte>();
 
+        /// <inheritdoc />
         public int InitialState { get; private set; }
 
+        /// <inheritdoc />
         public List<int> HaltingStates { get; set; } = new List<int>();
 
+        /// <inheritdoc />
         public int HeadPositionX
         {
             get
@@ -50,31 +59,29 @@ namespace TuringSuite.Core
             }
         }
 
-        public int CurrentState
-        {
-            get
-            {
-                return _currentState;
-            }
-        }
+        /// <inheritdoc />
+        public int CurrentState { get; private set; } = -1;
 
-        public ulong StepCount => _stepCount;
+        /// <inheritdoc />
+        public ulong StepCount { get; private set; } = 0;
 
+        /// <inheritdoc />
         public List<IStateTransitionDescription<int, byte>> Transitions { get; set; } = new List<IStateTransitionDescription<int, byte>>();
 
         /// <summary>
         /// Gets the simulation tape size.
         /// </summary>
-        public uint TapeSize
-        {
-            get
-            {
-                return _tapeSize;
-            }
-        }
+        public uint TapeSize { get; } = 0;
 
+        /// <summary>
+        /// Defines what action to perform if a state is encountered without
+        /// a well-defined transition defintion.
+        /// </summary>
         public StateNotFoundAction StateNotFoundAction { get; set; }
 
+        /// <summary>
+        /// Describes the underlying tape of the Turing machine.
+        /// </summary>
         public TapeType TapeType => TapeType.OneDimensionalNonFinite;
 
         public TuringMachineSimple(uint tapeSize, int initialState)
@@ -83,11 +90,14 @@ namespace TuringSuite.Core
 
             StateNotFoundAction = StateNotFoundAction.ThrowException;
 
-            _tapeSize = tapeSize;
+            TapeSize = tapeSize;
+
+            _tape = new byte[TapeSize];
         }
 
         /// <summary>
         /// Use this to manually configure the Turing machine (not parsed from JSON).
+        /// Should be called before <see cref="InitRun"/>.
         /// </summary>
         public void InitFromTransitions()
         {
@@ -106,6 +116,7 @@ namespace TuringSuite.Core
                 .ToList();
 
             HaltingStates = Transitions
+                .Cast<MachineTransitionSimple>()
                 .Where(x => x.NextStateHalts == true)
                 .Select(x => x.NextState)
                 .Where(x => x < 0)
@@ -116,21 +127,29 @@ namespace TuringSuite.Core
             BuildTransitionLookup();
         }
 
+        /// <summary>
+        /// Use this to initialize the software implementation of the Turing machine
+        /// before running it.
+        /// </summary>
         public void InitRun()
         {
-            _stepCount = 0;
+            StepCount = 0;
 
-            _positionOffset = (int)(_tapeSize >> 1);
+            _positionOffset = (int)(TapeSize >> 1);
             _headPositionX = _positionOffset;
 
-            // Array is inititalized to all zeroes
-            _tape = new byte[_tapeSize];
+            _minHeadIndex = _positionOffset;
+            _maxHeadIndex = _positionOffset;
 
-            _currentState = InitialState;
+            // Array is inititalized to all zeroes. Otherwise, memset or something.
+            _tape = new byte[TapeSize];
+
+            CurrentState = InitialState;
 
             _reachedHalt = false;
         }
 
+        /// <inheritdoc />
         public bool Step()
         {
             if (_reachedHalt)
@@ -138,7 +157,7 @@ namespace TuringSuite.Core
                 return false;
             }
 
-            var symbolTransitionLookup = _transitionLookup[_currentState];
+            var symbolTransitionLookup = _transitionLookup[CurrentState];
 
             IStateTransitionDescription<int, byte> transition = null;
             
@@ -165,11 +184,11 @@ namespace TuringSuite.Core
             MoveHead(transition.MoveOffsetX);
 
             // Ran out of ways to fail, now update the current state
-            _currentState = transition.NextState;
+            CurrentState = transition.NextState;
 
-            _stepCount++;
+            StepCount++;
 
-            if (transition.NextStateHalts)
+            if (((MachineTransitionSimple)transition).NextStateHalts)
             {
                 Halt();
                 return false;
@@ -178,15 +197,31 @@ namespace TuringSuite.Core
             return true;
         }
 
+        /// <summary>
+        /// Copies the section of the tape that has been visited so far.
+        /// </summary>
+        /// <returns>Copy of visited tape.</returns>
         public byte[] GetVisitedTape()
         {
             var visitLength = _maxHeadIndex - _minHeadIndex + 1;
+
+            if (visitLength <= 0)
+            {
+                return new byte[0];
+            }
+
             var t = new byte[visitLength];
             Array.Copy(_tape, _minHeadIndex, t, 0, visitLength);
 
             return t;
         }
 
+        /// <summary>
+        /// Reads the content of a file as JSON and parses it into a Turning machine.
+        /// </summary>
+        /// <param name="path">Path of file to read.</param>
+        /// <param name="tapeSize">Number of array elements to allocate for machine execution.</param>
+        /// <returns>Turing machine.</returns>
         public static TuringMachineSimple FromJsonFile(string path, uint tapeSize)
         {
             var fileContents = System.IO.File.ReadAllText(path);
@@ -194,9 +229,23 @@ namespace TuringSuite.Core
             return FromJson(fileContents, tapeSize);
         }
 
+        /// <summary>
+        /// Reads JSON and parses it into a Turning machine.
+        /// </summary>
+        /// <param name="json">JSON to read.</param>
+        /// <param name="tapeSize">Number of array elements to allocate for machine execution.</param>
+        /// <returns>Turing machine.</returns>
         public static TuringMachineSimple FromJson(string json, uint tapeSize)
         {
             var jtmd = JsonConvert.DeserializeObject<JsonTuringMachineDescription>(json);
+
+            if (object.ReferenceEquals(null, jtmd))
+            {
+                throw new ConfigurationException("Could not parse definition.")
+                {
+                    ErrorCode = TuringSuite.Core.Error.ErrorCode.CouldNotParseJson,
+                };
+            }
 
             var friendlyStateMap = new Dictionary<int, string>();
             var unfriendlyStateMap = new Dictionary<string, int>();
@@ -209,7 +258,10 @@ namespace TuringSuite.Core
 
             if (jtmd.HaltingStates.Count < 1)
             {
-                throw new ConfigurationException("No halting states found.");
+                throw new ConfigurationException("No halting states found.")
+                {
+                    ErrorCode = TuringSuite.Core.Error.ErrorCode.NoHaltingStatesFound,
+                };
             }
 
             var haltingState = -1;
@@ -223,7 +275,10 @@ namespace TuringSuite.Core
 
             if (jtmd.NonHaltingStates.Count < 1)
             {
-                throw new ConfigurationException("No non-halting states found.");
+                throw new ConfigurationException("No non-halting states found.")
+                {
+                    ErrorCode = TuringSuite.Core.Error.ErrorCode.NoNonHaltingStatesFound,
+                };
             }
 
             var state = 0;
@@ -239,7 +294,10 @@ namespace TuringSuite.Core
 
             if (!unfriendlyStateMap.TryGetValue(jtmd.InitialState, out initialState))
             {
-                throw new ConfigurationException($"{nameof(JsonTuringMachineDescription.InitialState)}='{initialState}', but not included in {nameof(JsonTuringMachineDescription.NonHaltingStates)} or {nameof(JsonTuringMachineDescription.HaltingStates)}");
+                throw new ConfigurationException($"{nameof(JsonTuringMachineDescription.InitialState)}='{initialState}', but not included in {nameof(JsonTuringMachineDescription.NonHaltingStates)} or {nameof(JsonTuringMachineDescription.HaltingStates)}")
+                {
+                    ErrorCode = TuringSuite.Core.Error.ErrorCode.InitialStateNotDescribed,
+                };
             }
 
             var tms = new TuringMachineSimple(tapeSize, initialState);
@@ -254,7 +312,10 @@ namespace TuringSuite.Core
 
             if (knownSymbols.Count < 1)
             {
-                throw new ConfigurationException($"No symbols found in transition defintions (property {nameof(ParsedStateTransitionDescription.FromSymbol)} and {nameof(ParsedStateTransitionDescription.WriteSymbol)}).");
+                throw new ConfigurationException($"No symbols found in transition defintions (property {nameof(ParsedStateTransitionDescription.FromSymbol)} and {nameof(ParsedStateTransitionDescription.WriteSymbol)}).")
+                {
+                    ErrorCode = TuringSuite.Core.Error.ErrorCode.NoKnownSymbolsDescribed,
+                };
             }
 
             byte symbol = 0;
@@ -274,7 +335,10 @@ namespace TuringSuite.Core
 
             if (jtmd.Transitions.Count < 1)
             {
-                throw new ConfigurationException("No transition definitions were found.");
+                throw new ConfigurationException("No transition definitions were found.")
+                {
+                    ErrorCode = TuringSuite.Core.Error.ErrorCode.NoTransitionsFound,
+                };
             }
 
             foreach (var t in jtmd.Transitions)
@@ -289,12 +353,18 @@ namespace TuringSuite.Core
 
                 if (!unfriendlyStateMap.TryGetValue(t.FromState, out fromState)) 
                 {
-                    throw new ConfigurationException($"{nameof(ParsedStateTransitionDescription.FromState)}='{t.FromState}' was listed in transition definitions, but not included in {nameof(JsonTuringMachineDescription.NonHaltingStates)} or {nameof(JsonTuringMachineDescription.HaltingStates)}");
+                    throw new ConfigurationException($"{nameof(ParsedStateTransitionDescription.FromState)}='{t.FromState}' was listed in transition definitions, but not included in {nameof(JsonTuringMachineDescription.NonHaltingStates)} or {nameof(JsonTuringMachineDescription.HaltingStates)}")
+                    {
+                        ErrorCode = TuringSuite.Core.Error.ErrorCode.TransitionFoundButNotListedHaltingNonHalting,
+                    };
                 }
 
                 if (!unfriendlyStateMap.TryGetValue(t.NextState, out nextState))
                 {
-                    throw new ConfigurationException($"{nameof(ParsedStateTransitionDescription.NextState)}='{t.NextState}' was listed in transition definitions, but not included in {nameof(JsonTuringMachineDescription.NonHaltingStates)} or {nameof(JsonTuringMachineDescription.HaltingStates)}");
+                    throw new ConfigurationException($"{nameof(ParsedStateTransitionDescription.NextState)}='{t.NextState}' was listed in transition definitions, but not included in {nameof(JsonTuringMachineDescription.NonHaltingStates)} or {nameof(JsonTuringMachineDescription.HaltingStates)}")
+                    {
+                        ErrorCode = TuringSuite.Core.Error.ErrorCode.TransitionFoundButNotListedHaltingNonHalting,
+                    };
                 }
 
                 var mts = new MachineTransitionSimple()
@@ -323,6 +393,11 @@ namespace TuringSuite.Core
             return tms;
         }
 
+        /// <summary>
+        /// Moves the machine head by the given offset. Updates min/max position visited
+        /// appropriately.
+        /// </summary>
+        /// <param name="offset"></param>
         private void MoveHead(int offset)
         {
             if ((long)_headPositionX + (long)offset >=  (long)int.MaxValue)
@@ -349,11 +424,17 @@ namespace TuringSuite.Core
             }
         }
 
+        /// <summary>
+        /// Changes application state of machine to be halted, updating internal variables.
+        /// </summary>
         private void Halt()
         {
             _reachedHalt = true;
         }
 
+        /// <summary>
+        /// Creates lookup table of transitions for program execution.
+        /// </summary>
         private void BuildTransitionLookup()
         {
             _transitionLookup = new Dictionary<int, Dictionary<byte, IStateTransitionDescription<int, byte>>>();

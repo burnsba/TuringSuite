@@ -7,7 +7,7 @@ namespace TuringSuite.Core
     /// <summary>
     /// Intermediate class to transfer JSON description into strongly typed class.
     /// </summary>
-    public class ParsedStateTransitionDescription : IStateTransitionDescription<string, string>
+    internal class ParsedStateTransitionDescription : IStateTransitionDescription<string, string>
     {
         public string FromSymbol { get; set; }
 
@@ -16,11 +16,6 @@ namespace TuringSuite.Core
         public string WriteSymbol { get; set; }
 
         public string NextState { get; set; }
-
-        /// <summary>
-        /// Not used by JSON. Determined by other properties.
-        /// </summary>
-        public bool NextStateHalts { get; set; }
 
         public int MoveOffsetX { get; set; }
 

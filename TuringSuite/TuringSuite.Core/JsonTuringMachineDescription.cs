@@ -4,7 +4,7 @@ using System.Text;
 
 namespace TuringSuite.Core
 {
-    public class JsonTuringMachineDescription
+    internal class JsonTuringMachineDescription
     {
         public string Author { get; set; }
 
