@@ -26,6 +26,11 @@ namespace TuringSuite.Core
         TState InitialState { get; }
 
         /// <summary>
+        /// Gets the blank symbol (initial value on tape).
+        /// </summary>
+        TSymbol BlankSymbol { get; }
+
+        /// <summary>
         /// Gets or sets halting states. Values should be negative.
         /// </summary>
         List<TState> HaltingStates { get; set; }
@@ -39,6 +44,11 @@ namespace TuringSuite.Core
         /// Gets the current state of the machine.
         /// </summary>
         TState CurrentState { get; }
+
+        /// <summary>
+        /// Gets the symbol currently under the machine head.
+        /// </summary>
+        TSymbol CurrentSymbol { get; }
 
         /// <summary>
         /// Gets the description of the machine tape (1-dimensional or more, finite or not, etc).

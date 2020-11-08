@@ -7,21 +7,13 @@ using TuringSuite.Core.Error;
 
 namespace TuringSuite.Core
 {
-    public class TuringMachineSimple : ITuringMachine<int, byte>
+    public partial class TuringMachineSmallExponent : ITuringMachine<int, byte>
     {
-        // There is the head position (theoretical Turing machine head position), which is being tracked, but
-        // implemented in code on a limited machine. The tape is being modeled as an array, and the
-        // head position starts out in the middle of the array. Therefore, the theoretical head position
-        // needs to be tracked, as well as the actual array offset.
-        private int _headPositionX = 0;
-        private int _positionOffset = 0;
-        private byte[] _tape;
-
-        // Track the farthest left on the tape the machine head has visited.
-        private int _minHeadIndex = 0;
-
-        // Track the farthest right on the tape the machine head has visited.
-        private int _maxHeadIndex = 0;
+        private LinkedListNode<SmallExponentTapeCell> _currentNode;
+        private LinkedListNode<SmallExponentTapeCell> _minNode;
+        private LinkedListNode<SmallExponentTapeCell> _maxNode;
+        private LinkedList<SmallExponentTapeCell> _tape;
+        private long _headExponent;
 
         // Track whether execution has reached a halting state.
         private bool _reachedHalt = false;
@@ -46,7 +38,7 @@ namespace TuringSuite.Core
 
         /// <inheritdoc />
         public int InitialState { get; private set; }
-
+        
         /// <inheritdoc />
         public byte BlankSymbol { get; private set; }
 
@@ -54,13 +46,7 @@ namespace TuringSuite.Core
         public List<int> HaltingStates { get; set; } = new List<int>();
 
         /// <inheritdoc />
-        public int HeadPositionX
-        {
-            get
-            {
-                return _headPositionX - _positionOffset;
-            }
-        }
+        public int HeadPositionX => throw new NotImplementedException();
 
         /// <inheritdoc />
         public int CurrentState { get; private set; } = -1;
@@ -70,22 +56,12 @@ namespace TuringSuite.Core
         {
             get
             {
-                if (object.ReferenceEquals(null, _tape))
+                if (object.ReferenceEquals(null, _currentNode) || object.ReferenceEquals(null, _currentNode.Value))
                 {
                     return default(byte);
                 }
 
-                if (_tape.Length < 1)
-                {
-                    return default(byte);
-                }
-
-                if (_headPositionX < 0 || (_headPositionX + 1) > _tape.Length)
-                {
-                    return default(byte);
-                }
-
-                return _tape[_headPositionX];
+                return _currentNode.Value.Symbol;
             }
         }
 
@@ -94,11 +70,6 @@ namespace TuringSuite.Core
 
         /// <inheritdoc />
         public List<IStateTransitionDescription<int, byte>> Transitions { get; set; } = new List<IStateTransitionDescription<int, byte>>();
-
-        /// <summary>
-        /// Gets the simulation tape size.
-        /// </summary>
-        public uint TapeSize { get; } = 0;
 
         /// <summary>
         /// Defines what action to perform if a state is encountered without
@@ -111,15 +82,13 @@ namespace TuringSuite.Core
         /// </summary>
         public TapeType TapeType => TapeType.OneDimensionalNonFinite;
 
-        public TuringMachineSimple(uint tapeSize, int initialState)
+        public TuringMachineSmallExponent(int initialState)
         {
             InitialState = initialState;
 
             StateNotFoundAction = StateNotFoundAction.ThrowException;
 
-            TapeSize = tapeSize;
-
-            _tape = new byte[TapeSize];
+            _tape = new LinkedList<SmallExponentTapeCell>();
         }
 
         /// <summary>
@@ -162,21 +131,17 @@ namespace TuringSuite.Core
         {
             StepCount = 0;
 
-            _positionOffset = (int)(TapeSize >> 1);
-            _headPositionX = _positionOffset;
+            _tape.Clear();
 
-            _minHeadIndex = _positionOffset;
-            _maxHeadIndex = _positionOffset;
-
-            // Array is inititalized to all zeroes. Otherwise, memset or something.
-            _tape = new byte[TapeSize];
+            _tape.AddFirst(SmallExponentTapeCell.CreateHead(BlankSymbol));
+            _currentNode = _tape.First;
+            _headExponent = 1;
 
             CurrentState = InitialState;
 
             _reachedHalt = false;
         }
 
-        /// <inheritdoc />
         public bool Step()
         {
             if (_reachedHalt)
@@ -187,8 +152,8 @@ namespace TuringSuite.Core
             var symbolTransitionLookup = _transitionLookup[CurrentState];
 
             IStateTransitionDescription<int, byte> transition = null;
-            
-            if (!symbolTransitionLookup.TryGetValue(_tape[_headPositionX], out transition))
+
+            if (!symbolTransitionLookup.TryGetValue(CurrentSymbol, out transition))
             {
                 switch (StateNotFoundAction)
                 {
@@ -205,7 +170,7 @@ namespace TuringSuite.Core
             }
 
             // Update tape value.
-            _tape[_headPositionX] = transition.WriteSymbol;
+            WriteSymbol(transition.WriteSymbol);
 
             // This will move _headPositionX.
             MoveHead(transition.MoveOffsetX);
@@ -224,23 +189,48 @@ namespace TuringSuite.Core
             return true;
         }
 
-        /// <summary>
-        /// Copies the section of the tape that has been visited so far.
-        /// </summary>
-        /// <returns>Copy of visited tape.</returns>
-        public byte[] GetVisitedTape()
+        public string GetExponentTape()
         {
-            var visitLength = _maxHeadIndex - _minHeadIndex + 1;
+            return string.Join("", _tape.Select(x => x.ToString()));
+        }
 
-            if (visitLength <= 0)
+        public long GetCurrentNodeOffset()
+        {
+            return _headExponent;
+        }
+
+        /// <summary>
+        /// Changes application state of machine to be halted, updating internal variables.
+        /// </summary>
+        private void Halt()
+        {
+            _reachedHalt = true;
+        }
+
+        /// <summary>
+        /// Creates lookup table of transitions for program execution.
+        /// </summary>
+        private void BuildTransitionLookup()
+        {
+            _transitionLookup = new Dictionary<int, Dictionary<byte, IStateTransitionDescription<int, byte>>>();
+
+            foreach (var state in NonHaltingStates)
             {
-                return new byte[0];
+                var stateLookup = new Dictionary<byte, IStateTransitionDescription<int, byte>>();
+                var stateTransitions = Transitions.Where(x => x.FromState == state);
+
+                foreach (var symbol in AlphabetSymbols)
+                {
+                    var symbolTransition = stateTransitions.FirstOrDefault(x => x.FromSymbol == symbol);
+
+                    if (!object.ReferenceEquals(null, symbolTransition))
+                    {
+                        stateLookup.Add(symbol, symbolTransition);
+                    }
+                }
+
+                _transitionLookup.Add(state, stateLookup);
             }
-
-            var t = new byte[visitLength];
-            Array.Copy(_tape, _minHeadIndex, t, 0, visitLength);
-
-            return t;
         }
 
         /// <summary>
@@ -249,11 +239,11 @@ namespace TuringSuite.Core
         /// <param name="path">Path of file to read.</param>
         /// <param name="tapeSize">Number of array elements to allocate for machine execution.</param>
         /// <returns>Turing machine.</returns>
-        public static TuringMachineSimple FromJsonFile(string path, uint tapeSize)
+        public static TuringMachineSmallExponent FromJsonFile(string path)
         {
             var fileContents = System.IO.File.ReadAllText(path);
 
-            return FromJson(fileContents, tapeSize);
+            return FromJson(fileContents);
         }
 
         /// <summary>
@@ -262,7 +252,7 @@ namespace TuringSuite.Core
         /// <param name="json">JSON to read.</param>
         /// <param name="tapeSize">Number of array elements to allocate for machine execution.</param>
         /// <returns>Turing machine.</returns>
-        public static TuringMachineSimple FromJson(string json, uint tapeSize)
+        public static TuringMachineSmallExponent FromJson(string json)
         {
             var jtmd = JsonConvert.DeserializeObject<JsonTuringMachineDescription>(json);
 
@@ -327,7 +317,7 @@ namespace TuringSuite.Core
                 };
             }
 
-            var tms = new TuringMachineSimple(tapeSize, initialState);
+            var tms = new TuringMachineSmallExponent(initialState);
 
             tms._friendlyStateMap = friendlyStateMap;
             tms._unfriendlyStateMap = unfriendlyStateMap;
@@ -378,7 +368,7 @@ namespace TuringSuite.Core
                 byte fromSymbol = unfriendlySymbolMap[t.FromSymbol];
                 byte writeSymbol = unfriendlySymbolMap[t.WriteSymbol];
 
-                if (!unfriendlyStateMap.TryGetValue(t.FromState, out fromState)) 
+                if (!unfriendlyStateMap.TryGetValue(t.FromState, out fromState))
                 {
                     throw new ConfigurationException($"{nameof(ParsedStateTransitionDescription.FromState)}='{t.FromState}' was listed in transition definitions, but not included in {nameof(JsonTuringMachineDescription.NonHaltingStates)} or {nameof(JsonTuringMachineDescription.HaltingStates)}")
                     {
@@ -421,67 +411,139 @@ namespace TuringSuite.Core
         }
 
         /// <summary>
-        /// Moves the machine head by the given offset. Updates min/max position visited
-        /// appropriately.
+        /// Moves the machine head by the given offset. If the head moves into a
+        /// section not previously visited, a section with a blank symbol
+        /// will be added to the linked list.
         /// </summary>
         /// <param name="offset"></param>
         private void MoveHead(int offset)
         {
-            if ((long)_headPositionX + (long)offset >=  (long)int.MaxValue)
+            long travelRemaining = offset;
+
+            while (true)
             {
-                throw new IndexOutOfRangeException();
-            }
-            else if (_headPositionX + offset < 0)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
-            _headPositionX += offset;
-
-            if (_headPositionX < _minHeadIndex)
-            {
-                _minHeadIndex = _headPositionX;
-            }
-
-            // Very first step will set min and max, and it may be the min/max
-            // for the entire run. Therefore, this can't be an else if.
-            if (_headPositionX > _maxHeadIndex)
-            {
-                _maxHeadIndex = _headPositionX;
-            }
-        }
-
-        /// <summary>
-        /// Changes application state of machine to be halted, updating internal variables.
-        /// </summary>
-        private void Halt()
-        {
-            _reachedHalt = true;
-        }
-
-        /// <summary>
-        /// Creates lookup table of transitions for program execution.
-        /// </summary>
-        private void BuildTransitionLookup()
-        {
-            _transitionLookup = new Dictionary<int, Dictionary<byte, IStateTransitionDescription<int, byte>>>();
-
-            foreach (var state in NonHaltingStates)
-            {
-                var stateLookup = new Dictionary<byte, IStateTransitionDescription<int, byte>>();
-                var stateTransitions = Transitions.Where(x => x.FromState == state);
-
-                foreach (var symbol in AlphabetSymbols)
+                if (travelRemaining == 0)
                 {
-                    var symbolTransition = stateTransitions.FirstOrDefault(x => x.FromSymbol == symbol);
-
-                    if (!object.ReferenceEquals(null, symbolTransition))
-                    {
-                        stateLookup.Add(symbol, symbolTransition);
-                    }
+                    return;
                 }
 
-                _transitionLookup.Add(state, stateLookup);
+                if (travelRemaining > 0
+                    && (_currentNode.Value.Exponent - _headExponent >= travelRemaining))
+                {
+                    _headExponent = _headExponent + travelRemaining;
+                    return;
+                }
+                else if (travelRemaining < 0
+                    && (_headExponent + travelRemaining > 0))
+                {
+                    _headExponent = _headExponent + travelRemaining;
+                    return;
+                }
+
+                if (travelRemaining < 0)
+                {
+                    if (_currentNode.Previous == null)
+                    {
+                        if (_currentNode.Value.Symbol != BlankSymbol)
+                        {
+                            var newCell = new SmallExponentTapeCell(BlankSymbol, -1 * travelRemaining);
+                            var newNode = _tape.AddBefore(_currentNode, newCell);
+                            _currentNode = newNode;
+                            _headExponent = _currentNode.Value.Exponent;
+                            return; 
+                        }
+                        else
+                        {
+                            _currentNode.Value.Exponent =
+                                _currentNode.Value.Exponent
+                                // Remember, travelRemaining is negative
+                                - (_headExponent + travelRemaining)
+                                + 1;
+                            _headExponent = 1;
+                            return;
+                        }
+                    }
+
+                    travelRemaining += _headExponent;
+                    _currentNode = _currentNode.Previous;
+                    _headExponent = _currentNode.Value.Exponent;
+                }
+                else
+                {
+                    if (_currentNode.Next == null)
+                    {
+                        if (_currentNode.Value.Symbol != BlankSymbol)
+                        {
+                            var newCell = new SmallExponentTapeCell(BlankSymbol, travelRemaining);
+                            var newNode = _tape.AddAfter(_currentNode, newCell);
+                            _currentNode = newNode;
+                            _headExponent = _currentNode.Value.Exponent;
+                            return; 
+                        }
+                        else
+                        {
+                            _currentNode.Value.Exponent = _headExponent + travelRemaining;
+                            _headExponent = _currentNode.Value.Exponent;
+                            return;
+                        }
+                    }
+
+                    travelRemaining -= _currentNode.Value.Exponent - _headExponent + 1;
+                    _currentNode = _currentNode.Next;
+                    _headExponent = 1;
+                }
+            }
+        }
+
+        private class SmallExponentTapeCell
+        {
+            public byte Symbol { get; set; }
+
+            /// <summary>
+            /// This is signed to make adding and subtracting exponents easier, but after simplification the
+            /// value should be a positive integer (greater than zero).
+            /// </summary>
+            public long Exponent { get; set; }
+
+            public bool ContainsMarker { get; set; } = false;
+
+            public long MarkerExponent { get; set; } = -1;
+
+            public SmallExponentTapeCell()
+            { }
+
+            public SmallExponentTapeCell(byte symbol, long exponent)
+            {
+                if (exponent < 1)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(exponent));
+                }
+
+                Symbol = symbol;
+                Exponent = exponent;
+            }
+
+            public SmallExponentTapeCell(byte symbol, long exponent, long markerExponent)
+            {
+                if (exponent < 1)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(exponent));
+                }
+
+                Symbol = symbol;
+                Exponent = exponent;
+                ContainsMarker = true;
+                MarkerExponent = markerExponent;
+            }
+
+            public static SmallExponentTapeCell CreateHead(byte symbol)
+            {
+                return new SmallExponentTapeCell(symbol, 1, 1);
+            }
+
+            public override string ToString()
+            {
+                return $"({Symbol},{Exponent})";
             }
         }
     }
