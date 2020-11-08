@@ -161,6 +161,11 @@ namespace TuringSuite.Core
                 return;
             }
 
+            if (!AlphabetSymbols.Contains(symbol))
+            {
+                throw new InvalidOperationException();
+            }
+
             // First check the "no neighbors" branch.
             // Can also get here if the existing neighbor(s) can be
             // ignored because they have a different symbol.
@@ -193,12 +198,12 @@ namespace TuringSuite.Core
                     Write_First_Solo(symbol);
                     return;
                 }
-                else if (_headExponent == _currentNode.Value.Exponent)
+                else if (_headExponent > 1 && _headExponent < _currentNode.Value.Exponent)
                 {
                     Write_Mid_Solo(symbol);
                     return;
                 }
-                else if (_headExponent > 1 && _headExponent < _currentNode.Value.Exponent)
+                else if (_headExponent == _currentNode.Value.Exponent)
                 {
                     Write_Last_Solo(symbol);
                     return;
@@ -227,12 +232,13 @@ namespace TuringSuite.Core
                     Write_IntoFirst(symbol);
                     return;
                 }
-                else if (_headExponent == _currentNode.Value.Exponent)
+
+                else if (_headExponent > 1 && _headExponent < _currentNode.Value.Exponent)
                 {
                     Write_Mid_Solo(symbol);
                     return;
                 }
-                else if (_headExponent > 1 && _headExponent < _currentNode.Value.Exponent)
+                else if (_headExponent == _currentNode.Value.Exponent)
                 {
                     Write_Last_Solo(symbol);
                     return;
@@ -240,14 +246,14 @@ namespace TuringSuite.Core
             }
             // Else, Next node branch
             else if (
-                (_currentNode.Previous != null
-                && _currentNode.Next == null
+                (_currentNode.Previous == null
+                && _currentNode.Next != null
                 && _currentNode.Next.Value.Symbol == symbol)
                 ||
                 (_currentNode.Previous != null
                 && _currentNode.Next != null
-                && _currentNode.Next.Value.Symbol == symbol
-                && _currentNode.Previous.Value.Symbol != symbol)
+                && _currentNode.Previous.Value.Symbol != symbol
+                && _currentNode.Next.Value.Symbol == symbol)
                 )
             {
                 if (_currentNode.Value.Exponent == 1)
@@ -261,12 +267,12 @@ namespace TuringSuite.Core
                     Write_First_Solo(symbol);
                     return;
                 }
-                else if (_headExponent == _currentNode.Value.Exponent)
+                else if (_headExponent > 1 && _headExponent < _currentNode.Value.Exponent)
                 {
                     Write_Mid_Solo(symbol);
                     return;
                 }
-                else if (_headExponent > 1 && _headExponent < _currentNode.Value.Exponent)
+                else if (_headExponent == _currentNode.Value.Exponent)
                 {
                     Write_IntoLast(symbol);
                     return;
@@ -291,12 +297,12 @@ namespace TuringSuite.Core
                     Write_IntoFirst(symbol);
                     return;
                 }
-                else if (_headExponent == _currentNode.Value.Exponent)
+                else if (_headExponent > 1 && _headExponent < _currentNode.Value.Exponent)
                 {
                     Write_Mid_Solo(symbol);
                     return;
                 }
-                else if (_headExponent > 1 && _headExponent < _currentNode.Value.Exponent)
+                else if (_headExponent == _currentNode.Value.Exponent)
                 {
                     Write_IntoLast(symbol);
                     return;

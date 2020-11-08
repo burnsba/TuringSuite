@@ -9,126 +9,12 @@ namespace TuringSuite.Test
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Assertions", "xUnit2013:Do not use equality check to check for collection size.", Justification = "<Pending>")]
 	public class SimpleRuntimeTest
     {
-        private const string bb1d2s2s = @"
-{
-	""TapeType"": ""1DimensionalNonFinite"",
-	""NonHaltingStates"": [""A"", ""B""],
-	""HaltingStates"": [""HALT""],
-	""InitialState"": ""A"",
-	
-	""Transitions"": [
-		{
-			""FromState"": ""A"",
-			""FromSymbol"": ""0"",
-			""MoveOffsetX"": 1,
-			""NextState"": ""B"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""A"",
-			""FromSymbol"": ""1"",
-			""MoveOffsetX"": -1,
-			""NextState"": ""B"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""B"",
-			""FromSymbol"": ""0"",
-			""MoveOffsetX"": -1,
-			""NextState"": ""A"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""B"",
-			""FromSymbol"": ""1"",
-			""MoveOffsetX"": 1,
-			""NextState"": ""HALT"",
-			""WriteSymbol"": ""1"",
-		}
-	]
-}
-";
-		private const string bb1d4s2s = @"
-{
-	""Author"": """",
-	""Date"": """",
-	""Version"": """",
-	""Comment"": """",
-	""Description"": """",
-	""Reference"": """",
-
-	""TapeType"": ""1DimensionalNonFinite"",
-	""NonHaltingStates"": [""A"", ""B"", ""C"", ""D""],
-	""HaltingStates"": [""HALT""],
-	""InitialState"": ""A"",
-	
-	""Transitions"": [
-		{
-			""FromState"": ""A"",
-			""FromSymbol"": ""0"",
-			""MoveOffsetX"": 1,
-			""NextState"": ""B"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""A"",
-			""FromSymbol"": ""1"",
-			""MoveOffsetX"": -1,
-			""NextState"": ""B"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""B"",
-			""FromSymbol"": ""0"",
-			""MoveOffsetX"": -1,
-			""NextState"": ""A"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""B"",
-			""FromSymbol"": ""1"",
-			""MoveOffsetX"": -1,
-			""NextState"": ""C"",
-			""WriteSymbol"": ""0"",
-		},
-		{
-			""FromState"": ""C"",
-			""FromSymbol"": ""0"",
-			""MoveOffsetX"": 1,
-			""NextState"": ""HALT"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""C"",
-			""FromSymbol"": ""1"",
-			""MoveOffsetX"": -1,
-			""NextState"": ""D"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""D"",
-			""FromSymbol"": ""0"",
-			""MoveOffsetX"": 1,
-			""NextState"": ""D"",
-			""WriteSymbol"": ""1"",
-		},
-		{
-			""FromState"": ""D"",
-			""FromSymbol"": ""1"",
-			""MoveOffsetX"": 1,
-			""NextState"": ""A"",
-			""WriteSymbol"": ""0"",
-		},
-	]
-}
-";
-
         [Fact]
         public void Test0010()
         {
 			uint tapeSize = 100;
 			bool step;
-			var tms = TuringMachineSimple.FromJson(bb1d2s2s, tapeSize);
+			var tms = TuringMachineSimple.FromJson(Constants.Bb1d2s2s, tapeSize);
 
 			Assert.Equal(1, tms.HaltingStates.Count);
 			Assert.Equal(2, tms.NonHaltingStates.Count);
@@ -297,7 +183,7 @@ namespace TuringSuite.Test
 		public void Test0020()
         {
 			uint tapeSize = 100;
-			var tms = TuringMachineSimple.FromJson(bb1d4s2s, tapeSize);
+			var tms = TuringMachineSimple.FromJson(Constants.Bb1d4s2s, tapeSize);
 
 			Assert.Equal(1, tms.HaltingStates.Count);
 			Assert.Equal(4, tms.NonHaltingStates.Count);

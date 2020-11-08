@@ -46,7 +46,7 @@ namespace TuringSuite.Core
         public List<int> HaltingStates { get; set; } = new List<int>();
 
         /// <inheritdoc />
-        public int HeadPositionX => throw new NotImplementedException();
+        public int HeadPositionX { get; private set; }
 
         /// <inheritdoc />
         public int CurrentState { get; private set; } = -1;
@@ -136,6 +136,8 @@ namespace TuringSuite.Core
             _tape.AddFirst(SmallExponentTapeCell.CreateHead(BlankSymbol));
             _currentNode = _tape.First;
             _headExponent = 1;
+
+            HeadPositionX = 0;
 
             CurrentState = InitialState;
 
@@ -424,6 +426,7 @@ namespace TuringSuite.Core
             {
                 if (travelRemaining == 0)
                 {
+                    // Can also get here indirectly from a loop iteration.
                     return;
                 }
 
@@ -431,12 +434,14 @@ namespace TuringSuite.Core
                     && (_currentNode.Value.Exponent - _headExponent >= travelRemaining))
                 {
                     _headExponent = _headExponent + travelRemaining;
+                    HeadPositionX += (int)travelRemaining;
                     return;
                 }
                 else if (travelRemaining < 0
                     && (_headExponent + travelRemaining > 0))
                 {
                     _headExponent = _headExponent + travelRemaining;
+                    HeadPositionX += (int)travelRemaining;
                     return;
                 }
 
@@ -446,14 +451,19 @@ namespace TuringSuite.Core
                     {
                         if (_currentNode.Value.Symbol != BlankSymbol)
                         {
+                            // Update head position before updating remaining travel.
+                            HeadPositionX += (int)travelRemaining;
+                            travelRemaining += _headExponent - 1;
+
                             var newCell = new SmallExponentTapeCell(BlankSymbol, -1 * travelRemaining);
                             var newNode = _tape.AddBefore(_currentNode, newCell);
                             _currentNode = newNode;
-                            _headExponent = _currentNode.Value.Exponent;
+                            _headExponent = 1;
                             return; 
                         }
                         else
                         {
+                            HeadPositionX += (int)travelRemaining;
                             _currentNode.Value.Exponent =
                                 _currentNode.Value.Exponent
                                 // Remember, travelRemaining is negative
@@ -464,7 +474,9 @@ namespace TuringSuite.Core
                         }
                     }
 
+                    HeadPositionX -= (int)_headExponent;
                     travelRemaining += _headExponent;
+
                     _currentNode = _currentNode.Previous;
                     _headExponent = _currentNode.Value.Exponent;
                 }
@@ -474,6 +486,10 @@ namespace TuringSuite.Core
                     {
                         if (_currentNode.Value.Symbol != BlankSymbol)
                         {
+                            // Update head position before updating remaining travel.
+                            HeadPositionX += (int)travelRemaining;
+                            travelRemaining = travelRemaining - _currentNode.Value.Exponent + _headExponent;
+
                             var newCell = new SmallExponentTapeCell(BlankSymbol, travelRemaining);
                             var newNode = _tape.AddAfter(_currentNode, newCell);
                             _currentNode = newNode;
@@ -482,13 +498,16 @@ namespace TuringSuite.Core
                         }
                         else
                         {
+                            HeadPositionX += (int)travelRemaining;
                             _currentNode.Value.Exponent = _headExponent + travelRemaining;
                             _headExponent = _currentNode.Value.Exponent;
                             return;
                         }
                     }
 
+                    HeadPositionX += (int)(_currentNode.Value.Exponent - _headExponent + 1);
                     travelRemaining -= _currentNode.Value.Exponent - _headExponent + 1;
+
                     _currentNode = _currentNode.Next;
                     _headExponent = 1;
                 }
