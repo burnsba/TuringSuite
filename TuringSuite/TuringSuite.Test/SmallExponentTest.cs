@@ -1855,6 +1855,214 @@ namespace TuringSuite.Test
 			Assert.Equal(0, tms.CurrentSymbol);
 		}
 
+		// MoveHead, (positive) start in blank section, skip (right) non-blank section,
+		// and move (right) into blank section.
+		[Fact]
+		public void Test0510()
+        {
+			var tms = TuringMachineSmallExponent.FromJson(Constants.Bb1d2s3s);
+			tms.InitRun();
+
+			string currentTape;
+
+			// before: >*0
+			// after: *0 0 0 0 >0
+			InvokeMoveHead(tms, 4);
+
+			for (int i = 0; i < 10; i++)
+			{
+				InvokeWriteSymbol(tms, 1);
+				InvokeMoveHead(tms, 1);
+			}
+
+			// before: *0 0 0 0 >0
+			// after: *0 0 0 0 1 1 1 1 1 1 1 1 1 1 >1
+			InvokeWriteSymbol(tms, 1);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(0,4)(1,11)", currentTape);
+			Assert.Equal(14, tms.HeadPositionX);
+			Assert.Equal(11, tms.GetCurrentNodeOffset());
+			Assert.Equal(1, tms.CurrentSymbol);
+
+			// before: *0 0 0 0 1 1 1 1 1 1 1 1 1 1 >1
+			// after: *0 >0 0 0 1 1 1 1 1 1 1 1 1 1 1
+			InvokeMoveHead(tms, -13);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(0,4)(1,11)", currentTape);
+			Assert.Equal(1, tms.HeadPositionX);
+			Assert.Equal(2, tms.GetCurrentNodeOffset());
+			Assert.Equal(0, tms.CurrentSymbol);
+
+			// before: *0 >0 0 0 1 1 1 1 1 1 1 1 1 1 1
+			// after: *0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 0 0 >0
+			InvokeMoveHead(tms, 16);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(0,4)(1,11)(0,3)", currentTape);
+			Assert.Equal(17, tms.HeadPositionX);
+			Assert.Equal(3, tms.GetCurrentNodeOffset());
+			Assert.Equal(0, tms.CurrentSymbol);
+		}
+
+		// MoveHead, (positive) start in blank section, skip two (right) non-blank section,
+		// and move (right) into blank section.
+		[Fact]
+		public void Test0512()
+		{
+			var tms = TuringMachineSmallExponent.FromJson(Constants.Bb1d2s3s);
+			tms.InitRun();
+
+			string currentTape;
+
+			// before: >*0
+			// after: *0 0 0 0 >0
+			InvokeMoveHead(tms, 4);
+
+			for (int i = 0; i < 5; i++)
+			{
+				InvokeWriteSymbol(tms, 1);
+				InvokeMoveHead(tms, 1);
+			}
+			InvokeWriteSymbol(tms, 1);
+			for (int i = 0; i < 5; i++)
+			{
+				InvokeWriteSymbol(tms, 2);
+				InvokeMoveHead(tms, 1);
+			}
+			InvokeWriteSymbol(tms, 2);
+
+			// before: *0 0 0 0 >0
+			// after: *0 0 0 0 1 1 1 1 1 2 2 2 2 2 >2
+			InvokeWriteSymbol(tms, 2);
+
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(0,4)(1,5)(2,6)", currentTape);
+			Assert.Equal(14, tms.HeadPositionX);
+			Assert.Equal(6, tms.GetCurrentNodeOffset());
+			Assert.Equal(2, tms.CurrentSymbol);
+
+			// before: *0 0 0 0 1 1 1 1 1 2 2 2 2 2 >2
+			// after: *0 >0 0 0 1 1 1 1 1 2 2 2 2 2 2
+			InvokeMoveHead(tms, -13);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(0,4)(1,5)(2,6)", currentTape);
+			Assert.Equal(1, tms.HeadPositionX);
+			Assert.Equal(2, tms.GetCurrentNodeOffset());
+			Assert.Equal(0, tms.CurrentSymbol);
+
+			// before: *0 >0 0 0 1 1 1 1 1 2 2 2 2 2 2
+			// after: *0 0 0 0 1 1 1 1 1 2 2 2 2 2 2 0 0 >0
+			InvokeMoveHead(tms, 16);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(0,4)(1,5)(2,6)(0,3)", currentTape);
+			Assert.Equal(17, tms.HeadPositionX);
+			Assert.Equal(3, tms.GetCurrentNodeOffset());
+			Assert.Equal(0, tms.CurrentSymbol);
+		}
+
+		// MoveHead, (negative) start in blank section, skip (left) non-blank section,
+		// and move (left) into blank section.
+		[Fact]
+		public void Test0514()
+		{
+			var tms = TuringMachineSmallExponent.FromJson(Constants.Bb1d2s3s);
+			tms.InitRun();
+
+			string currentTape;
+
+			// before: >*0
+			// after: >0 0 0 0 *0
+			InvokeMoveHead(tms, -4);
+
+			for (int i = 0; i < 10; i++)
+			{
+				InvokeWriteSymbol(tms, 1);
+				InvokeMoveHead(tms, -1);
+			}
+
+			// before: >0 0 0 0 *0
+			// after: >1 1 1 1 1 1 1 1 1 1 1 0 0 0 *0
+			InvokeWriteSymbol(tms, 1);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(1,11)(0,4)", currentTape);
+			Assert.Equal(-14, tms.HeadPositionX);
+			Assert.Equal(1, tms.GetCurrentNodeOffset());
+			Assert.Equal(1, tms.CurrentSymbol);
+
+			// before: >1 1 1 1 1 1 1 1 1 1 1 0 0 0 *0
+			// after: 1 1 1 1 1 1 1 1 1 1 1 0 0 >0 *0
+			InvokeMoveHead(tms, 13);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(1,11)(0,4)", currentTape);
+			Assert.Equal(-1, tms.HeadPositionX);
+			Assert.Equal(3, tms.GetCurrentNodeOffset());
+			Assert.Equal(0, tms.CurrentSymbol);
+
+			// before: 1 1 1 1 1 1 1 1 1 1 1 0 0 >0 *0
+			// after: >0 0 0 1 1 1 1 1 1 1 1 1 1 1 0 0 0 *0
+			InvokeMoveHead(tms, -16);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(0,3)(1,11)(0,4)", currentTape);
+			Assert.Equal(-17, tms.HeadPositionX);
+			Assert.Equal(1, tms.GetCurrentNodeOffset());
+			Assert.Equal(0, tms.CurrentSymbol);
+		}
+
+		// MoveHead, (negative) start in blank section, skip two (left) non-blank section,
+		// and move (left) into blank section.
+		[Fact]
+		public void Test0516()
+		{
+			var tms = TuringMachineSmallExponent.FromJson(Constants.Bb1d2s3s);
+			tms.InitRun();
+
+			string currentTape;
+
+			// before: >*0
+			// after: >0 0 0 0 *0
+			InvokeMoveHead(tms, -4);
+
+			for (int i = 0; i < 5; i++)
+			{
+				InvokeWriteSymbol(tms, 1);
+				InvokeMoveHead(tms, -1);
+			}
+			InvokeWriteSymbol(tms, 1);
+			for (int i = 0; i < 5; i++)
+			{
+				InvokeWriteSymbol(tms, 2);
+				InvokeMoveHead(tms, -1);
+			}
+			InvokeWriteSymbol(tms, 2);
+
+			// before: >0 0 0 0 *0
+			// after: >2 2 2 2 2 2 1 1 1 1 1 0 0 0 *0
+			InvokeWriteSymbol(tms, 2);
+
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(2,6)(1,5)(0,4)", currentTape);
+			Assert.Equal(-14, tms.HeadPositionX);
+			Assert.Equal(1, tms.GetCurrentNodeOffset());
+			Assert.Equal(2, tms.CurrentSymbol);
+
+			// before: >2 2 2 2 2 2 1 1 1 1 1 0 0 0 *0
+			// after: 2 2 2 2 2 2 1 1 1 1 1 0 0 >0 *0
+			InvokeMoveHead(tms, 13);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(2,6)(1,5)(0,4)", currentTape);
+			Assert.Equal(-1, tms.HeadPositionX);
+			Assert.Equal(3, tms.GetCurrentNodeOffset());
+			Assert.Equal(0, tms.CurrentSymbol);
+
+			// before: 2 2 2 2 2 2 1 1 1 1 1 0 0 >0 *0
+			// after: >0 0 0 2 2 2 2 2 2 1 1 1 1 1 0 0 0 *0
+			InvokeMoveHead(tms, -16);
+			currentTape = tms.GetExponentTape();
+			Assert.Equal("(0,3)(2,6)(1,5)(0,4)", currentTape);
+			Assert.Equal(-17, tms.HeadPositionX);
+			Assert.Equal(1, tms.GetCurrentNodeOffset());
+			Assert.Equal(0, tms.CurrentSymbol);
+		}
+
 		// Bb1d2s2s
 		[Fact]
 		public void Test0600()
