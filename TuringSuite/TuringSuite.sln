@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TuringSuite.Core", "TuringS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TuringSuite.Test", "TuringSuite.Test\TuringSuite.Test.csproj", "{0EFB0CC2-C737-4688-8838-DCB74A95A73F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TuringSuite.Web", "TuringSuite.Web\TuringSuite.Web.csproj", "{2A4A11EC-DC7F-46FC-B1AF-AD03B2BB6856}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{0EFB0CC2-C737-4688-8838-DCB74A95A73F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0EFB0CC2-C737-4688-8838-DCB74A95A73F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0EFB0CC2-C737-4688-8838-DCB74A95A73F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A4A11EC-DC7F-46FC-B1AF-AD03B2BB6856}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A4A11EC-DC7F-46FC-B1AF-AD03B2BB6856}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A4A11EC-DC7F-46FC-B1AF-AD03B2BB6856}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A4A11EC-DC7F-46FC-B1AF-AD03B2BB6856}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
