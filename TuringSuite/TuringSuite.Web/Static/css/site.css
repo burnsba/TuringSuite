@@ -98,17 +98,34 @@ td.tmttb-susdplsr {
 	border-right: 1px solid black;
 }
 
-.tfh-left {
-    min-width: 100px;
-    display: inline-block;
+.tfh-tdleft,
+table.tmmh tbody td.tfh-tdleft {
     text-align: right;
+	border-right: 0;
+	padding-right: 0;
+	padding-left: 2em;
 }
-.tfh-head {
-    display: inline-block;
+.tfh-tdhead,
+table.tmmh tbody td.tfh-tdhead {
+	text-align: right;
+	border-left: 0;
+	border-right: 0;
+	padding-left: 0;
+	padding-right: 0;
+}
+.tfh-tdright,
+table.tmmh tbody td.tfh-tdright {
+    text-align: left;
+	border-left: 0;
+	padding-left: 0;
+	padding-right: 2em;
+}
+.tfh-tleft {
+
+}
+.tfh-thead {
     text-decoration: overline;
 }
-.tfh-right {
-    display: inline-block;
-    min-width: 100px;
-    text-align: left;
+.tfh-tright {
+
 }

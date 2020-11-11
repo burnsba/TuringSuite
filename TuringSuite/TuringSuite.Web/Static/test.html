@@ -146,19 +146,30 @@
 			index = sections.left.length + pos;
 			sections["left"][index] = ">" + sections["left"][index];
 		}
-		t += '<span class="tfh-left">' + sections["left"].map(x => (""+x).padStart(3, 'zzz')).join("").replace(/z/gi,'&nbsp;') + '&nbsp;</span>';
+		t = '<span class="tfh-tleft">' + sections["left"].map(x => (""+x).padStart(3, 'zzz')).join("").replace(/z/gi,'&nbsp;') + '</span>';
+		if (!t) {
+			t = '&nbsp;'
+		}
+		tr.append('<td class="tfh-tdleft">' + t + '</td>');
 		
 		if (pos === 0) {
-			t += ">" + '<span class="tfh-head">' + sections["origin"].join("") + '</span>';
+			t = "&nbsp;>" + '<span class="tfh-thead">' + sections["origin"].join("") + '</span>';
 		} else {
-			t += "&nbsp;" + '<span class="tfh-head">' + sections["origin"].join("") + '</span>';
+			t = '&nbsp;<span class="tfh-thead">' + sections["origin"].join("") + '</span>';
 		}
+		if (!t) {
+			t = '&nbsp;&nbsp;'
+		}
+		tr.append('<td class="tfh-tdhead">' + t + '</td>');
 		
 		if (pos > 0) {
 			sections["right"][pos - 1] = ">" + sections["right"][pos - 1];
 		}
-		t += '<span class="tfh-right">' + sections["right"].map(x => (""+x).padStart(3, 'zzz')).join("").replace(/z/gi,'&nbsp;') + '</span>';
-		tr.append('<td>' + t + '</td>');
+		t = '<span class="tfh-tright">' + sections["right"].map(x => (""+x).padStart(3, 'zzz')).join("").replace(/z/gi,'&nbsp;') + '</span>';
+		if (!t) {
+			t = '&nbsp;'
+		}
+		tr.append('<td class="tfh-tdright">' + t + '</td>');
 		
 		$("#machineHistory tbody").append(tr);
 	}
@@ -194,7 +205,7 @@ bb1d2s2s
 			<td>State</td>
 			<td>Min offset</td>
 			<td>Max offset</td>
-			<td>Tape</td>
+			<td colspan="3">Tape</td>
 		</tr>
 	</thead>
 	<tbody>
