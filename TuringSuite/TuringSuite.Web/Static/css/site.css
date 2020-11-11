@@ -1,1 +1,114 @@
-﻿
+﻿.b {
+	font-weight: bold;
+}
+.overline {
+	text-decoration: overline;
+}
+.underline {
+	text-decoration: underline;
+}
+
+.larger {
+	font-size: larger;
+}
+
+.hcenter {
+	text-align: center;
+}
+
+.tmtt, .tmmh {
+	font-family: monospace;
+}
+
+table.tmtt, table.tmmh {
+	border-collapse: collapse;
+	border: 1px solid black;
+}
+
+table.tmtt thead td,
+table.tmmh thead td {
+	background-color: #adcdfe;
+}
+
+table.tmtt td,
+table.tmmh td {
+	padding: 4px;
+}
+
+table.tmmh td {
+	border: 1px solid black;
+}
+
+table.tmtt tbody td,
+table.tmmh tbody td {
+	text-align: center;
+}
+
+/* solid */
+td.tmttb-susdslsr {
+	border: 1px solid black;
+}
+/* thead top, "On 0" */
+td.tmttb-supdslsr {
+	border-top: 1px solid black;
+	border-bottom: 1px dotted #999999;
+	border-left: 1px solid black;
+	border-right: 1px solid black;
+}
+/* thead bottom, "Write" */
+td.tmttb-pusdslpr {
+	border-top: 1px dotted #999999;
+	border-bottom: 1px solid black;
+	border-left: 1px solid black;
+	border-right: 1px dotted #999999;
+}
+/* thead bottom, "Move" */
+td.tmttb-pusdplpr {
+	border-top: 1px dotted #999999;
+	border-bottom: 1px solid black;
+	border-left: 1px dotted #999999;
+	border-right: 1px dotted #999999;
+}
+/* thead bottom, "Goto" */
+td.tmttb-pusdplsr {
+	border-top: 1px dotted #999999;
+	border-bottom: 1px solid black;
+	border-left: 1px dotted #999999;
+	border-right: 1px solid black;
+}
+/* tbody col Write */
+td.tmttb-susdslpr {
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+	border-left: 1px solid black;
+	border-right: 1px dotted #999999;
+}
+/* tbody col Move */
+td.tmttb-susdplpr {
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+	border-left: 1px dotted #999999;
+	border-right: 1px dotted #999999;
+}
+/* tbody col Goto */
+td.tmttb-susdplsr {
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+	border-left: 1px dotted #999999;
+	border-right: 1px solid black;
+}
+
+.tfh-left {
+    min-width: 100px;
+    display: inline-block;
+    text-align: right;
+}
+.tfh-head {
+    display: inline-block;
+    text-decoration: overline;
+}
+.tfh-right {
+    display: inline-block;
+    min-width: 100px;
+    text-align: left;
+}

@@ -4,4 +4,16 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Static\js\MachineTransitionSimple.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Static\js\MachineTransitionSimple.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Static\img\" />
+  </ItemGroup>
+
 </Project>

@@ -123,9 +123,9 @@ class TuringMachineSimple {
 			return false;
 		}
 
-		var symbolTransitionLookup = this._transitionLookup[this.CurrentState];
+		let symbolTransitionLookup = this._transitionLookup[this.CurrentState];
 
-		var transition = null;
+		let transition = null;
 		try {
 			transition = symbolTransitionLookup[this._tape[this._headPositionX]];
 		} catch {
@@ -159,13 +159,13 @@ class TuringMachineSimple {
 	}
 	
 	GetVisitedTape() {
-		var visitLength = this._maxHeadIndex - this._minHeadIndex + 1;
+		let visitLength = this._maxHeadIndex - this._minHeadIndex + 1;
 
 		if (visitLength <= 0) {
 			return [0];
 		}
 		
-		var t = Array.from({length: visitLength}, x => 0);
+		let t = Array.from({length: visitLength}, x => 0);
 		
 		for (let i=0; i<visitLength; i++) {
 			t[i] = this._tape[this._minHeadIndex + i];
@@ -174,8 +174,31 @@ class TuringMachineSimple {
 		return t;
 	}
 	
+	GetVisitedTapeSections() {
+		let visitLength = this._maxHeadIndex - this._minHeadIndex + 1;
+		let originOffset = this._positionOffset - this._minHeadIndex;
+		
+		if (visitLength <= 0) {
+			return [0];
+		}
+		
+		let t = {"left": [], "origin": [], "right": []};
+		
+		for (let i=0; i<visitLength; i++) {
+			if (i < originOffset) {
+				t["left"].push(this._tape[this._minHeadIndex + i]);
+			} else if (i === originOffset) {
+				t["origin"].push(this._tape[this._minHeadIndex + i]);
+			} else {
+				t["right"].push(this._tape[this._minHeadIndex + i]);
+			}
+		}
+
+		return t;
+	}
+	
 	static FromJson(json, tapeSize) {
-		var jtmd = JSON.parse(json);
+		let jtmd = JSON.parse(json);
 		
 		return TuringMachineSimple.FromJsonObject(jtmd, tapeSize);
 	}
@@ -185,22 +208,22 @@ class TuringMachineSimple {
 			throw "Could not parse definition.";
 		}
 		
-		var friendlyStateMap = {};
-		var unfriendlyStateMap = {};
-		var friendlySymbolMap = {};
-		var unfriendlySymbolMap = {};
+		let friendlyStateMap = {};
+		let unfriendlyStateMap = {};
+		let friendlySymbolMap = {};
+		let unfriendlySymbolMap = {};
 		
-		var haltingStates = [];
-		var nonHaltingStates = [];
-		var alphabetSymbols = [];
+		let haltingStates = [];
+		let nonHaltingStates = [];
+		let alphabetSymbols = [];
 		
 		if (jtmd.HaltingStates.length < 1)
 		{
 			throw "No halting states found.";
 		}
 		
-		jtmd.HaltingStates.sort(compareNumbers);
-		var haltingState = -1;
+		jtmd.HaltingStates.sort();
+		let haltingState = -1;
 		for (const s of jtmd.HaltingStates)
 		{
 			friendlyStateMap[haltingState] = s;
@@ -214,8 +237,8 @@ class TuringMachineSimple {
 			throw "No non-halting states found.";
 		}
 		
-		jtmd.NonHaltingStates.sort(compareNumbers);
-		var state = 0;
+		jtmd.NonHaltingStates.sort();
+		let state = 0;
 		for (const s of jtmd.NonHaltingStates)
 		{
 			friendlyStateMap[state] = s;
@@ -224,19 +247,19 @@ class TuringMachineSimple {
 			state++;
 		}
 		
-		var initialState = unfriendlyStateMap[jtmd.InitialState];
+		let initialState = unfriendlyStateMap[jtmd.InitialState];
 		
 		if (initialState === null || initialState === undefined)
 		{
 			throw `InitialState='${initialState}', but not included in NonHaltingStates or HaltingStates`;
 		}
 		
-		var tms = new TuringMachineSimple(tapeSize, initialState);
+		let tms = new TuringMachineSimple(tapeSize, initialState);
 		
 		tms._friendlyStateMap = friendlyStateMap;
 		tms._unfriendlyStateMap = unfriendlyStateMap;
 		
-		var knownSymbols = [];
+		let knownSymbols = [];
 		
 		for (const x of jtmd.Transitions) {
 			if (x.FromSymbol >= 0 
@@ -257,7 +280,7 @@ class TuringMachineSimple {
 			throw "No symbols found in transition defintions (property FromSymbol and WriteSymbol).";
 		}
 		
-		var symbol = 0;
+		let symbol = 0;
 		for (const s of knownSymbols)
 		{
 			friendlySymbolMap[symbol] = s;
@@ -281,11 +304,11 @@ class TuringMachineSimple {
 		{
 			// States need to match the HaltingStates+NonHaltingStates properties, but symbols are
 			// extracted from the transition definitions.
-			var fromState;
-			var nextState;
+			let fromState;
+			let nextState;
 		
-			var fromSymbol = unfriendlySymbolMap[t.FromSymbol];
-			var writeSymbol = unfriendlySymbolMap[t.WriteSymbol];
+			let fromSymbol = unfriendlySymbolMap[t.FromSymbol];
+			let writeSymbol = unfriendlySymbolMap[t.WriteSymbol];
 			
 			fromState = unfriendlyStateMap[t.FromState];
 			if (fromState === null || fromState === undefined) 
@@ -299,7 +322,7 @@ class TuringMachineSimple {
 				throw `NextState='${t.NextState}' was listed in transition definitions, but not included in NonHaltingStates or HaltingStates`;
 			}
 		
-			var mts = new MachineTransitionSimple({
+			let mts = new MachineTransitionSimple({
 				FromState: fromState,
 				FromSymbol: fromSymbol,
 				MoveOffsetX: t.MoveOffsetX,
@@ -354,12 +377,12 @@ class TuringMachineSimple {
 
 		for (const state of this.NonHaltingStates)
 		{
-			var stateLookup = {};
-			var stateTransitions = this.Transitions.filter(x => x.FromState === state);
+			let stateLookup = {};
+			let stateTransitions = this.Transitions.filter(x => x.FromState === state);
 
 			for (const symbol of this.AlphabetSymbols)
 			{
-				var symbolTransition = stateTransitions.find(x => x.FromSymbol === symbol);
+				let symbolTransition = stateTransitions.find(x => x.FromSymbol === symbol);
 
 				if (this.symbolTransition === null || this.symbolTransition === undefined)
 				{

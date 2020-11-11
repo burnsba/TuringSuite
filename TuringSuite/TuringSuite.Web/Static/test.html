@@ -3,13 +3,206 @@
 	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 	<link rel="stylesheet" href="css/site.css">
 	
+	<script src="js/lib/jquery-3.5.1.min.js"></script>
 	<script src="js/corelib.js"></script>
 	
 	<script src="js/MachineTransitionSimple.js"></script>
 	<!-- TuringMachineSimple depends on MachineTransitionSimple -->
-	<script src="js/TuringMachineSimple.js"></script> 
+	<script src="js/TuringMachineSimple.js"></script>
+	
+	<!-- predefined machines -->
+	<script src="js/tm/Bb1d2s2s.js"></script>
+	<script src="js/tm/Bb1d4s2s.js"></script>
 </head>
 <body>
-a
+
+<script>
+	var _tm;
+
+	function LoadMachine() {
+		_tm = TuringMachineSimple.FromJsonObject(Bb1d4s2s, 100);
+		_tm.InitRun();
+		
+		$("#transitionTable").html("");
+		$("#machineHistory tbody").html("");
+		
+		let thead = $('<thead></thead>');
+		let tr1 = $('<tr><td rowspan="2" class="tmttb-susdslsr">State</td></tr>');
+		for (const s of _tm.AlphabetSymbols) {
+			tr1.append($('<td colspan="3" class="hcenter tmttb-supdslsr">On ' + s + '</td>'));
+		}
+		thead.append(tr1);
+		let tr2 = $('<tr></tr>');
+		for (const s of _tm.AlphabetSymbols) {
+			tr2.append($('<td class="tmttb-pusdslpr">Write</td><td class="tmttb-pusdplpr">Move</td><td class="tmttb-pusdplsr">Goto</td>'));
+		}
+		thead.append(tr2);
+		$("#transitionTable").append(thead);
+		
+		let tbody = $('<tbody></tbody>');
+		for (const stateInternal of _tm.NonHaltingStates) {
+			let tr = $('<tr></tr>');
+			
+			let friendlyState = _tm._friendlyStateMap[stateInternal];
+			if (friendlyState === null || friendlyState === undefined) {
+				friendlyState = "";
+			}
+			tr.append('<td class="b larger tmttb-susdslsr">' + friendlyState + '</td>');
+			
+			for (const symbolInternal of _tm.AlphabetSymbols) {
+				let transition = _tm.Transitions.find(x => x.FromState === stateInternal && x.FromSymbol === symbolInternal);
+				if (transition === null || transition === undefined) {
+					transition = {
+						MoveOffsetX: "",
+						NextState: "",
+						WriteSymbol: "",
+					};
+				}
+				
+				friendlyState = _tm._friendlyStateMap[transition.NextState];
+				if (friendlyState === null || friendlyState === undefined) {
+					friendlyState = "";
+				}
+				
+				tr.append('<td class="tmttb-susdslpr">' + transition.WriteSymbol + '</td>');
+				tr.append('<td class="tmttb-susdplpr">' + (transition.MoveOffsetX < 0 ? '' : '+') + transition.MoveOffsetX + '</td>');
+				tr.append('<td class="b larger tmttb-susdplsr">' + friendlyState + '</td>');
+			}
+			
+			tbody.append(tr);
+		}
+		
+		$("#transitionTable").append(tbody);
+		
+		MachineHistoryAppendCurrentState();
+		
+		for (let i=0; i<30; i++) {
+			Step();
+		}
+	}
+	
+	function Step(stepTimes) {
+		if (!_tm || _tm._reachedHalt || !isFinite(stepTimes) || stepTimes < 1) {
+			return;
+		}
+		
+		let result = false;
+		for (let i=0; i<stepTimes; i++) {
+			result = _tm.Step();
+			MachineHistoryAppendCurrentState();
+			
+			if (!result) {
+				return;
+			}
+		}
+	}
+	
+	function MachineHistoryAppendCurrentState() {
+		let tr = $('<tr></tr>');
+		
+		// step
+		let step = _tm.StepCount;
+		if (!isFinite(step)) {
+			step = 0;
+		}
+		tr.append('<td>' + step + '</td>');
+		
+		// head position
+		let pos = _tm.HeadPositionX;
+		if (!isFinite(pos)) {
+			pos = 0;
+		}
+		tr.append('<td>' + pos + '</td>');
+		
+		// state
+		let stateInternal = _tm.CurrentState;
+		let friendlyState = _tm._friendlyStateMap[stateInternal];
+		if (friendlyState === null || friendlyState === undefined) {
+			friendlyState = "UNKOWN";
+		}
+		tr.append('<td>' + friendlyState + '</td>');
+		
+		// min offset
+		let min = _tm._minHeadIndex - _tm._positionOffset;
+		if (!isFinite(min)) {
+			min = "NaN";
+		}
+		tr.append('<td>' + min + '</td>');
+		
+		// max offset
+		let max = _tm._maxHeadIndex - _tm._positionOffset;
+		if (!isFinite(max)) {
+			max = "NaN";
+		}
+		tr.append('<td>' + max + '</td>');
+		
+		// tape
+		let sections = _tm.GetVisitedTapeSections();
+		let index = 0;
+		let t = "";
+		let ta = "";
+		
+		if (pos < 0) {
+			index = sections.left.length + pos;
+			sections["left"][index] = ">" + sections["left"][index];
+		}
+		t += '<span class="tfh-left">' + sections["left"].map(x => (""+x).padStart(3, 'zzz')).join("").replace(/z/gi,'&nbsp;') + '&nbsp;</span>';
+		
+		if (pos === 0) {
+			t += ">" + '<span class="tfh-head">' + sections["origin"].join("") + '</span>';
+		} else {
+			t += "&nbsp;" + '<span class="tfh-head">' + sections["origin"].join("") + '</span>';
+		}
+		
+		if (pos > 0) {
+			sections["right"][pos - 1] = ">" + sections["right"][pos - 1];
+		}
+		t += '<span class="tfh-right">' + sections["right"].map(x => (""+x).padStart(3, 'zzz')).join("").replace(/z/gi,'&nbsp;') + '</span>';
+		tr.append('<td>' + t + '</td>');
+		
+		$("#machineHistory tbody").append(tr);
+	}
+</script>
+
+<label>Turing machine type:</label>
+<select name="machineType" id="machineType">
+  <option value="TuringMachineSimple">Simple</option>
+  <!-- <option value="TuringMachineSmallExponent">Exponent (small)</option> -->
+</select>
+
+<br />
+
+<label>Machine definitions:</label>
+bb1d2s2s
+
+<input type="button" value="Load" onclick="LoadMachine();"/>
+
+<br />
+
+<label>Transition table</label>
+<table id="transitionTable" class="tmtt">
+</table>
+
+<label>Machine history:</label>
+<br />
+
+<table id="machineHistory" class="tmmh">
+	<thead>
+		<tr>
+			<td>Step</td>
+			<td>Head position</td>
+			<td>State</td>
+			<td>Min offset</td>
+			<td>Max offset</td>
+			<td>Tape</td>
+		</tr>
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+
+<input type="button" value="Step" onclick="Step(1);"/>
+<input type="button" value="Step 100" onclick="Step(100);"/>
+
 </body>
 </html>
