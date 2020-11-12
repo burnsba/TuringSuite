@@ -1,5 +1,12 @@
-﻿.b {
+﻿body {
+	background-color: #edede0;
+	font-family: monospace;
+}
+.b {
 	font-weight: bold;
+}
+.nowrap {
+	white-space: nowrap;
 }
 .overline {
 	text-decoration: overline;
@@ -20,7 +27,9 @@
 	font-family: monospace;
 }
 
-table.tmtt, table.tmmh {
+table.tmtt,
+table.tmmh,
+table.tmmeta {
 	border-collapse: collapse;
 	border: 1px solid black;
 }
@@ -30,18 +39,30 @@ table.tmmh thead td {
 	background-color: #adcdfe;
 }
 
+.tmmeta-label {
+	background-color: #adcdfe;
+}
+
 table.tmtt td,
 table.tmmh td {
 	padding: 4px;
 }
 
-table.tmmh td {
+table.tmmh td,
+table.tmmeta td {
 	border: 1px solid black;
 }
 
 table.tmtt tbody td,
 table.tmmh tbody td {
 	text-align: center;
+}
+
+table.tmmeta td {
+	padding: 6px;
+}
+.tmmeta-value {
+	min-width: 100px;
 }
 
 /* solid */
@@ -128,4 +149,26 @@ table.tmmh tbody td.tfh-tdright {
 }
 .tfh-tright {
 
+}
+.tmmh-wrapper {
+	display: block;
+	height: 300px;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	width: min-content;
+	resize: both;
+}
+
+.page-section {
+	border: 1px solid #a8a0ff;
+	border-radius: 12px;
+	background-color: #f8fbff;
+	padding: 24px;
+	margin-top: 6px;
+	margin-bottom: 6px;
+}
+.section-label {
+	font-size: x-large;
+	margin-bottom: 6px;
+	font-weight: bold;
 }

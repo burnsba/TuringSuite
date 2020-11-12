@@ -13,15 +13,56 @@
 	<!-- predefined machines -->
 	<script src="js/tm/Bb1d2s2s.js"></script>
 	<script src="js/tm/Bb1d4s2s.js"></script>
+	<script src="js/tm/Hmabu90_no5.js"></script>
 </head>
 <body>
 
 <script>
+"use strict";
+
 	var _tm;
+	
+	function GetObjectForLoading() {
+		let val = $("#machineDefinition").val();
+		switch (val) {
+			case "bb1d2s2s": return Bb1d2s2s;
+			case "bb1d4s2s": return Bb1d4s2s;
+			case "hmabu90_no5": return Hmabu90_no5;
+			case "json":
+				let jobj = {};
+				try {
+					jobj = JSON.parse($("#definitionJsonInput").val());
+				} catch {
+					alert ("Could not parse json");
+					return null;
+				}
+				
+				return jobj;
+		}
+		
+		throw "invalid selection";
+	}
 
 	function LoadMachine() {
-		_tm = TuringMachineSimple.FromJsonObject(Bb1d4s2s, 100);
+		let preobj = GetObjectForLoading();
+		if (!preobj) {
+			return;
+		}
+		try {
+			_tm = TuringMachineSimple.FromJsonObject(preobj, 100);
+		} catch {
+			alert("Error loading object into TuringMachineSimple");
+			return;
+		}
 		_tm.InitRun();
+		
+		// meta info from json object, not parsed into the Turing machine.
+		$("#tmmeta-author").html(""+preobj.Author);
+		$("#tmmeta-date").html(""+preobj.Date);
+		$("#tmmeta-version").html(""+preobj.Version);
+		$("#tmmeta-comment").html(""+preobj.Comment);
+		$("#tmmeta-description").html(""+preobj.Description);
+		$("#tmmeta-reference").html(""+preobj.Reference);
 		
 		$("#transitionTable").html("");
 		$("#machineHistory tbody").html("");
@@ -92,9 +133,16 @@
 			MachineHistoryAppendCurrentState();
 			
 			if (!result) {
-				return;
+				break;
 			}
 		}
+		
+		ScrollToEndOfHistory();
+	}
+	
+	function ScrollToEndOfHistory() {
+		let objDiv = $(".tmmh-wrapper")[0];
+		objDiv.scrollTop = objDiv.scrollHeight;
 	}
 	
 	function MachineHistoryAppendCurrentState() {
@@ -173,47 +221,141 @@
 		
 		$("#machineHistory tbody").append(tr);
 	}
+	
+	function machineDefinitionChange() {
+		if ($("#machineDefinition").val() === "json") {
+			$(".definitionJsonInput-wrapper").show();
+		} else {
+			$(".definitionJsonInput-wrapper").hide();
+		}
+	}
 </script>
 
-<label>Turing machine type:</label>
-<select name="machineType" id="machineType">
-  <option value="TuringMachineSimple">Simple</option>
-  <!-- <option value="TuringMachineSmallExponent">Exponent (small)</option> -->
-</select>
+<div class="page-section">
+	<div class="section-label">Turing Machine setup</div>
+	
+	<br />
+	
+	<label>Turing machine type:</label>
+	<select name="machineType" id="machineType">
+	  <option value="TuringMachineSimple">Simple</option>
+	  <!-- <option value="TuringMachineSmallExponent">Exponent (small)</option> -->
+	</select>
+	
+<br />
+	<label>Machine definitions:</label>
+	<select name="machineDefinition" id="machineDefinition" onchange="machineDefinitionChange();">
+	  <option value="bb1d2s2s">Busy Beaver 2 symbol 2 state</option>
+	  <option value="bb1d4s2s">Busy Beaver 4 symbol 2 state</option>
+	  <option value="hmabu90_no5">Heiner Marxen simple counter TM#5</option>
+	  <option value="json">Load from json</option>
+	</select>
 
 <br />
+	<div class="definitionJsonInput-wrapper" style="display:none">
+		<p>&nbsp;</p>
+		<br />
+		&nbsp;
+		<br />
+		Avoid trailing commas! <br />
+		Check syntax with a tool like <a href="https://jsonlint.com/">https://jsonlint.com/</a> <br />
+		<textarea id="definitionJsonInput" name"definitionJsonInput" rows="20" cols="70">
+{
+	"Author": "",
+	"Date": "",
+	"Version": "",
+	"Comment": "",
+	"Description": "2-state, 2-symbol busy beaver",
+	"Reference": "<a href=\"https://en.wikipedia.org/wiki/Busy_beaver\">https://en.wikipedia.org/wiki/Busy_beaver</a>",
+	
+	"TapeType": "1DimensionalNonFinite",
+	"NonHaltingStates": ["A", "B"],
+	"HaltingStates": ["HALT"],
+	"InitialState": "A",
+	
+	"Transitions": [
+		{
+			"FromState": "A",
+			"FromSymbol": "0",
+			"MoveOffsetX": 1,
+			"NextState": "B",
+			"WriteSymbol": "1"
+		},
+		{
+			"FromState": "A",
+			"FromSymbol": "1",
+			"MoveOffsetX": -1,
+			"NextState": "B",
+			"WriteSymbol": "1"
+		},
+		{
+			"FromState": "B",
+			"FromSymbol": "0",
+			"MoveOffsetX": -1,
+			"NextState": "A",
+			"WriteSymbol": "1"
+		},
+		{
+			"FromState": "B",
+			"FromSymbol": "1",
+			"MoveOffsetX": 1,
+			"NextState": "HALT",
+			"WriteSymbol": "1"
+		}
+	]
+}</textarea>
+	</div>
+	
+	<input type="button" value="Load" onclick="LoadMachine();"/>
+</div>
 
-<label>Machine definitions:</label>
-bb1d2s2s
+<div class="page-section">
+	<div class="section-label">Transition table</div>
 
-<input type="button" value="Load" onclick="LoadMachine();"/>
+	<table id="transitionTable" class="tmtt">
+	</table>
+	
+</div>
 
-<br />
+<div class="page-section">
+	<div class="section-label">Machine history</div>
+	
+	<table id="machineMeta" class="tmmeta">
+		<thead></thead>
+		<tbody>
+			<tr><td class="tmmeta-label">Author</td><td id="tmmeta-author" class="tmmeta-value"></td></tr>
+			<tr><td class="tmmeta-label">Date</td><td id="tmmeta-date" class="tmmeta-value"></td></tr>
+			<tr><td class="tmmeta-label">Version</td><td id="tmmeta-version" class="tmmeta-value"></td></tr>
+			<tr><td class="tmmeta-label">Comment</td><td id="tmmeta-comment" class="tmmeta-value"></td></tr>
+			<tr><td class="tmmeta-label">Description</td><td id="tmmeta-description" class="tmmeta-value"></td></tr>
+			<tr><td class="tmmeta-label">Reference</td><td id="tmmeta-reference" class="tmmeta-value"></td></tr>
+		</tbody>
+	</table>
+	
+	<p>&nbsp</p>
+	<br />
+	
+	<div class="tmmh-wrapper">
+		<table id="machineHistory" class="tmmh">
+			<thead>
+				<tr>
+					<td class="nowrap">Step</td>
+					<td class="nowrap">Head position</td>
+					<td class="nowrap">State</td>
+					<td class="nowrap">Min offset</td>
+					<td class="nowrap">Max offset</td>
+					<td class="nowrap" colspan="3">Tape</td>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
 
-<label>Transition table</label>
-<table id="transitionTable" class="tmtt">
-</table>
-
-<label>Machine history:</label>
-<br />
-
-<table id="machineHistory" class="tmmh">
-	<thead>
-		<tr>
-			<td>Step</td>
-			<td>Head position</td>
-			<td>State</td>
-			<td>Min offset</td>
-			<td>Max offset</td>
-			<td colspan="3">Tape</td>
-		</tr>
-	</thead>
-	<tbody>
-	</tbody>
-</table>
-
-<input type="button" value="Step" onclick="Step(1);"/>
-<input type="button" value="Step 100" onclick="Step(100);"/>
+	<input type="button" value="Step 1" onclick="Step(1);"/>
+	<input type="button" value="Step 10" onclick="Step(10);"/>
+	<input type="button" value="Step 100" onclick="Step(100);"/>
+</div>
 
 </body>
 </html>

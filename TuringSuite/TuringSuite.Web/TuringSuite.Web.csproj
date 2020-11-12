@@ -14,6 +14,8 @@
 
   <ItemGroup>
     <Folder Include="Static\img\" />
+    <Folder Include="Static\js\lib\" />
+    <Folder Include="Static\js\tm\" />
   </ItemGroup>
 
 </Project>
